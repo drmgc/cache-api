@@ -2,6 +2,18 @@ import { IsOptional, IsNumber } from 'class-validator'
 import { Type } from 'class-transformer'
 
 import {
+  ApiTags,
+  ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiUnauthorizedResponse,
+  ApiMethodNotAllowedResponse,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+} from '@nestjs/swagger'
+
+import {
   Controller,
   Get, Delete, Post,
   Param, Query,
@@ -22,12 +34,16 @@ export class FindAllQuery {
   includeExpired?: boolean
 }
 
+@ApiTags('cache')
 @Controller('cache')
 export class CacheController {
   constructor(
     private readonly cacheService: CacheService,
   ) {}
 
+  @ApiOperation({
+    summary: 'Get all stored keys',
+  })
   @Get()
   findAll(
     @Query() { skip, limit, includeExpired }: FindAllQuery,
@@ -35,11 +51,19 @@ export class CacheController {
     return this.cacheService.findAllKeys({ skip, limit, includeExpired })
   }
 
+  @ApiOperation({
+    summary: 'Delete all stored keys',
+  })
   @Delete()
   deleteAll(): Promise<void> {
     return this.cacheService.removeAllKeys()
   }
 
+  @ApiOperation({
+    summary: 'Get the cached data for a given key',
+    description: 'If there is no such key, it will be retrived',
+  })
+  @ApiParam({ name: 'key', type: 'string' })
   @Get(':key')
   findByKey(
     @Param('key') key: string,
@@ -47,6 +71,10 @@ export class CacheController {
     return this.cacheService.getKey(key)
   }
 
+  @ApiOperation({
+    summary: 'Refresh and get data for a given key',
+  })
+  @ApiParam({ name: 'key', type: 'string' })
   @Post(':key')
   refreshKey(
     @Param('key') key: string,
@@ -54,6 +82,10 @@ export class CacheController {
     return this.cacheService.refreshKey(key)
   }
 
+  @ApiOperation({
+    summary: 'Delete given key',
+  })
+  @ApiParam({ name: 'key', type: 'string' })
   @Delete(':key')
   deleteByKey(
     @Param('key') key: string,
