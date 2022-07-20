@@ -16,6 +16,8 @@ export class CacheService {
   private readonly logger: Logger = new Logger(CacheService.name)
 
   private readonly ttl: number
+  private readonly capacity: number
+  private readonly cleanupGap: number
 
   constructor(
     config: ConfigService,
@@ -23,8 +25,16 @@ export class CacheService {
     @InjectModel(Cache.name) private readonly cacheModel: Model<CacheDocument>,
   ) {
     this.ttl = ms(config.get<string>('CACHE_TTL', '60s'))
+    this.capacity = config.get<number>('CACHE_CAPACITY', 10)
+    this.cleanupGap = config.get<number>('CACHE_CLEANUP_GAP', 5)
 
     this.logger.log(`TTL set to ${ms(this.ttl, { long: true })}`)
+    this.logger.log(`Capacity set to ${this.capacity}`)
+    this.logger.log(`Cleanup gap set to ${this.cleanupGap}`)
+  }
+
+  get cleanupAt(): number {
+    return this.capacity - this.cleanupGap
   }
 
   async findAllKeys(
@@ -65,7 +75,9 @@ export class CacheService {
   async setKey(key: CacheKey, value: CacheValue): Promise<void> {
     const expiresAt = new Date(new Date().getTime() + this.ttl)
 
-    // TODO: check count of cache items
+    // Check for cleanup capacity
+    const count = await this.cacheModel.count()
+    if (count > this.cleanupAt) await this.cleanup()
 
     await this.cacheModel.findOneAndUpdate(
       { key },
@@ -80,5 +92,35 @@ export class CacheService {
 
   async removeAllKeys(): Promise<void> {
     await this.cacheModel.remove({})
+  }
+
+  async cleanup(): Promise<void> {
+    await this.cleanupExpired()
+
+    const count = await this.cacheModel.count()
+    if (count > this.cleanupAt) await this.cleanupOldest()
+  }
+
+  private async cleanupExpired(): Promise<void> {
+    await this.cacheModel.deleteMany({
+      expiresAt: { $lt: new Date() },
+    })
+  }
+
+  private async cleanupOldest(): Promise<void> {
+    // Looking up for newest of top-[cleanupGap] oldest items
+    const oldest = await this.cacheModel
+      .find({})
+      .sort('+expiresAt')
+      .skip(this.cleanupGap)
+      .limit(1)
+      .select({ expiresAt: 1 })
+
+    const cleanupPoint = oldest[oldest.length - 1]!.expiresAt
+
+    // Delete all cache items older then the news of oldest
+    await this.cacheModel.deleteMany({
+      expiresAt: { $le: cleanupPoint },
+    })
   }
 }
