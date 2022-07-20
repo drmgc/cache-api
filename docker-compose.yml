@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+      - mongo-db:/data/db
+    ports:
+      - 127.0.0.1:27017:27017
+    networks:
+      internal:
+        aliases:
+          - mongo
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 127.0.0.1:8081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo/
+    depends_on:
+      - mongo
+    networks:
+      internal:
+    profiles:
+      - tools
+
+volumes:
+  mongo-db:
+
+networks:
+  internal:
