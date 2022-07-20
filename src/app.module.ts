@@ -4,9 +4,6 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { CacheModule } from './cache'
 
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
-
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -21,7 +18,7 @@ import { AppService } from './app.service'
     }),
     CacheModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule { }

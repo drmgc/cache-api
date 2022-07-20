@@ -3,14 +3,8 @@ import { Type } from 'class-transformer'
 
 import {
   ApiTags,
-  ApiBadRequestResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiUnauthorizedResponse,
-  ApiMethodNotAllowedResponse,
   ApiOperation,
   ApiParam,
-  ApiProperty,
 } from '@nestjs/swagger'
 
 import {

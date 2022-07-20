@@ -9,8 +9,6 @@ import { CacheKey, CacheValue } from './types'
  */
 @Injectable()
 export class CacheProvidingService {
-  constructor() { }
-
   async get(key: CacheKey): Promise<CacheValue> {
     return crypto.randomBytes(20).toString('hex')
   }
