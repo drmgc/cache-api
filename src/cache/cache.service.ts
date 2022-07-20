@@ -27,7 +27,19 @@ export class CacheService {
     this.logger.log(`TTL set to ${ms(this.ttl, { long: true })}`)
   }
 
-  async lookupKey(key: CacheKey): Promise<CacheValue> {
+  async findAllKeys(
+    { skip, limit }: { skip?: number, limit?: number },
+  ): Promise<CacheKey[]> {
+    const caches = await this.cacheModel
+      .find({ expiresAt: { $lt: new Date() } })
+      .select({ key: 1 })
+      .skip(skip || 0)
+      .limit(limit || 10)
+
+    return caches.map(c => c.key)
+  }
+
+  async getKey(key: CacheKey): Promise<CacheValue> {
     const now = new Date()
 
     const cache = await this.cacheModel.findOne({ key })
@@ -37,17 +49,31 @@ export class CacheService {
     return await this.refreshKey(key)
   }
 
-  private async refreshKey(key: CacheKey): Promise<CacheValue> {
-    const value = this.cacheProvider.get(key)
+  async refreshKey(key: CacheKey): Promise<CacheValue> {
+    const value = await this.cacheProvider.get(key)
 
+    await this.setKey(key, value)
+
+    return value
+  }
+
+  async setKey(key: CacheKey, value: CacheValue): Promise<void> {
     const expiresAt = new Date(new Date().getTime() + this.ttl)
 
-    const newCache = await this.cacheModel.findOneAndUpdate(
+    // TODO: check count of cache items
+
+    await this.cacheModel.findOneAndUpdate(
       { key },
       { value, expiresAt },
       { upsert: true, new: true },
     )
+  }
 
-    return newCache.value
+  async removeKey(key: CacheKey): Promise<void> {
+    await this.cacheModel.findOneAndDelete({ key })
+  }
+
+  async removeAllKeys(): Promise<void> {
+    await this.cacheModel.remove({})
   }
 }
