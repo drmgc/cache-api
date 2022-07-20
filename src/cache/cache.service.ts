@@ -31,10 +31,11 @@ export class CacheService {
     { skip, limit }: { skip?: number, limit?: number },
   ): Promise<CacheKey[]> {
     const caches = await this.cacheModel
-      .find({ expiresAt: { $lt: new Date() } })
-      .select({ key: 1 })
+      .find({ expiresAt: { $gt: new Date() } })
+      .sort('+expiresAt')
       .skip(skip || 0)
       .limit(limit || 10)
+      .select({ key: 1 })
 
     return caches.map(c => c.key)
   }
