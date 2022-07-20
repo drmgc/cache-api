@@ -28,10 +28,14 @@ export class CacheService {
   }
 
   async findAllKeys(
-    { skip, limit }: { skip?: number, limit?: number },
+    { skip, limit, includeExpired }: { skip?: number, limit?: number, includeExpired?: boolean },
   ): Promise<CacheKey[]> {
     const caches = await this.cacheModel
-      .find({ expiresAt: { $gt: new Date() } })
+      .find(
+        !includeExpired && {
+          expiresAt: { $gt: new Date() },
+        } || {}
+      )
       .sort('+expiresAt')
       .skip(skip || 0)
       .limit(limit || 10)
