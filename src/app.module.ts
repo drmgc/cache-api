@@ -19,6 +19,7 @@ import { AppService } from './app.service'
         }
       },
     }),
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],
