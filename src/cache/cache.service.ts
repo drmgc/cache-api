@@ -22,7 +22,7 @@ export class CacheService {
     private readonly cacheProvider: CacheProvidingService,
     @InjectModel(Cache.name) private readonly cacheModel: Model<CacheDocument>,
   ) {
-    this.ttl = ms(config.get<string>('CACHE_TTL', '10s'))
+    this.ttl = ms(config.get<string>('CACHE_TTL', '60s'))
 
     this.logger.log(`TTL set to ${ms(this.ttl, { long: true })}`)
   }
